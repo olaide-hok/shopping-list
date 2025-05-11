@@ -1,4 +1,4 @@
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import React, {useState} from 'react';
 import {ThemedText} from '@/components/ThemedText';
 import {BodyScrollView} from '@/components/ui/BodyScrollView';
@@ -6,16 +6,91 @@ import TextInput from '@/components/ui/text-input';
 import Button from '@/components/ui/button';
 import {useRouter} from 'expo-router';
 import {ClerkAPIError} from '@clerk/types';
+import {useSignUp} from '@clerk/clerk-expo';
 
 const SignUpScreen = () => {
+    const {signUp, setActive, isLoaded} = useSignUp();
     const router = useRouter();
 
-    const [emailAdress, setEmailAddress] = useState('');
+    const [emailAddress, setEmailAddress] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [errors, setErrors] = useState<ClerkAPIError[]>([]);
+    const [code, setCode] = useState('');
 
-    const onSignUpPress = () => {};
+    const [pendingVerification, setPendingVerification] = useState(false);
+
+    const onSignUpPress = async () => {
+        if (!isLoaded) return;
+        setIsLoading(true);
+        setErrors([]);
+
+        try {
+            // Start with creating a user
+            await signUp.create({
+                emailAddress,
+                password,
+            });
+            // confirmation
+            await signUp.prepareEmailAddressVerification({
+                strategy: 'email_code',
+            });
+            setPendingVerification(true);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    const onVerifyPress = async () => {
+        if (!isLoaded) return;
+        setIsLoading(true);
+        setErrors([]);
+
+        try {
+            // Start with creating a user
+            const signUpAttempt = await signUp.attemptEmailAddressVerification({
+                code,
+            });
+
+            if (signUpAttempt.status === 'complete') {
+                await setActive({session: signUpAttempt.createdUserId});
+                router.replace('/');
+            } else {
+                console.log(signUpAttempt);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (pendingVerification) {
+        return (
+            <BodyScrollView>
+                <TextInput
+                    value={code}
+                    label={`Enter the verification cose we sent to ${emailAddress}`}
+                    placeholder="Enter your verification code"
+                    onChangeText={(code) => setCode(code)}
+                />
+                <Button
+                    onPress={onVerifyPress}
+                    disabled={!code || isLoading}
+                    loading={isLoading}>
+                    {' '}
+                    Verify
+                </Button>
+
+                {errors.map((error) => (
+                    <ThemedText key={error.longMessage} style={{color: 'red'}}>
+                        {error.longMessage}
+                    </ThemedText>
+                ))}
+            </BodyScrollView>
+        );
+    }
 
     return (
         <BodyScrollView
@@ -23,7 +98,7 @@ const SignUpScreen = () => {
                 padding: 16,
             }}>
             <TextInput
-                value={emailAdress}
+                value={emailAddress}
                 label="Email"
                 placeholder="Enter email"
                 autoCapitalize="none"
@@ -40,7 +115,7 @@ const SignUpScreen = () => {
             <Button
                 onPress={onSignUpPress}
                 loading={isLoading}
-                disabled={!emailAdress || !password || isLoading}>
+                disabled={!emailAddress || !password || isLoading}>
                 Continue
             </Button>
 
