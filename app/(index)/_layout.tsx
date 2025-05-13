@@ -1,5 +1,6 @@
 import Button from '@/components/ui/button';
 import {ListCreationProvider} from '@/context/ListCreationContext';
+import ShoppingListsStore from '@/stores/ShoppingListsStore';
 import {useUser} from '@clerk/clerk-expo';
 import {Redirect, Stack, useRouter} from 'expo-router';
 import {Provider as TinyBaseProvider} from 'tinybase/ui-react';
@@ -14,6 +15,7 @@ export default function HomeRoutesLayout() {
 
     return (
         <TinyBaseProvider>
+            <ShoppingListsStore />
             <ListCreationProvider>
                 <Stack
                     screenOptions={{
@@ -87,6 +89,45 @@ export default function HomeRoutesLayout() {
                             headerTitle: 'Choose a color',
                             sheetAllowedDetents: [0.5, 0.75, 1],
                             sheetGrabberVisible: true,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="list/[listId]/share"
+                        options={{
+                            presentation: 'formSheet',
+                            sheetGrabberVisible: true,
+                            headerLargeTitle: false,
+                            headerTitle: 'Invite',
+                        }}
+                    />
+                    <Stack.Screen
+                        name="list/[listId]/product/new"
+                        options={{
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: [0.8, 1],
+                            sheetGrabberVisible: true,
+                            headerLargeTitle: false,
+                            headerTitle: 'Add product',
+                        }}
+                    />
+                    <Stack.Screen
+                        name="list/[listId]/edit"
+                        options={{
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: [0.5, 0.75, 1],
+                            sheetGrabberVisible: true,
+                            headerLargeTitle: false,
+                            headerTitle: 'Edit list',
+                        }}
+                    />
+                    <Stack.Screen
+                        name="list/[listId]/product/[productId]"
+                        options={{
+                            presentation: 'formSheet',
+                            sheetAllowedDetents: [0.75, 1],
+                            sheetGrabberVisible: true,
+                            headerLargeTitle: false,
+                            headerTitle: 'Details',
                         }}
                     />
                 </Stack>
